@@ -5,7 +5,6 @@
 #include <stdio.h>
 
 using namespace cv;
-using namespace std;
 
 int main(int argc, char* argv[])
 {
@@ -36,14 +35,17 @@ int main(int argc, char* argv[])
 	// 0 : Minimum circle radius
 	// 0 : Maximum circle radius
 
-	vector<Vec3f> circles;
+	std::vector<Vec3f> circles;
+	std::vector<Mat> extractedCircles;
+
 	HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 0);
 
-	cout<<"Nombre de pièces trouvées : "<<circles.size()<<endl;
+	std::cout<<"Nombre de pièces trouvées : "<<circles.size()<<std::endl;
 
-	// Draw the circles detected
+	// Draw the circles detected and Extract them
 	for( size_t i = 0; i < circles.size(); i++ )
 	{
+		//DrawCircle
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
 		// circle center
@@ -51,33 +53,43 @@ int main(int argc, char* argv[])
 		// circle outline
 		circle( src, center, radius, Scalar(0,0,255), 3, 8, 0 );
 
+
+		//Extract Circle
 		//get the Rect containing the circle:
 		Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
 		// obtain the image ROI:
 		Mat roi(src, r);
-		
+
 		// make a black mask, same size:
 		Mat mask(roi.size(), roi.type(), Scalar::all(0));
 		// with a white, filled circle in it:
 		circle(mask, Point(radius,radius), radius, Scalar::all(255), -1);
-		
+
 		// combine roi & mask:
-		Mat eye_cropped = roi & mask;
+		Mat circleCropped = roi & mask;
 
-		namedWindow("Original image with coins", WINDOW_NORMAL);
-		resizeWindow("Original image with coins", src.cols, src.rows);
-		imshow("Original image with coins", src);
-
+		extractedCircles.push_back(circleCropped);
 	}
 
-	// Show your results
+	// Show original Image
 	namedWindow("Original image with coins", WINDOW_NORMAL);
 	resizeWindow("Original image with coins", src.cols, src.rows);
 	imshow("Original image with coins", src);
 
 
+	// Show results for DEBUG
+
+	for(size_t i = 0; i < circles.size(); i++)
+	{
+		string nameWin = string("Extracted Circle  %d", i+1);
+		namedWindow(nameWin, WINDOW_NORMAL);
+		resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
+		imshow(nameWin, extractedCircles[i]);
+	}
+
 	waitKey(0);
+
 	return 0;
 }
 
