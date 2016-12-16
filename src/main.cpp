@@ -7,83 +7,58 @@
 using namespace cv;
 using namespace std;
 
-int main()
+int main(int argc, char* argv[])
 {
-    Mat src, src_gray;
+	Mat src;
 
-    // Read the image
-    src = imread("img/pieces2.jpg", 1);
+	/*Parsing Command Line Argument*/
 
-    // Convert it to gray
-    cvtColor(src, src_gray, CV_BGR2GRAY);
+	if(argc < 2){
+		src = imread("img/pieces.jpg", 1);
+	}
+	else{
+		src = imread(argv[1]);
+	}
+	/******************************/
 
-    // Apply the Hough Transform to find the circles
-    // CV_HOUGH_GRADIENT : detection method to use (currently, the only implemented one)
-    // 1 : inverse ratio of the accumulator resolution to the image resolution
-    // src_gray.rows/8 : minimum distance between the centers of the detected circles
-    // 200 : the higher threshold of the two passed to the Canny() edge detector (the lower one is twice smaller)
-    // 100 : the accumulator threshold for the circle centers at the detection stage. The smaller it is, the more false circles may be detected
-    // 0 : Minimum circle radius
-    // 0 : Maximum circle radius
-    vector<Vec3f> circles;
-    HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 50);
 
-    cout<<"Nombre de pièces trouvées : "<<circles.size()<<endl;
+	Mat src_gray;
 
-    // Tableau d'images contenant chacune un des cercles trouvés
-    Mat CerclesIsoles[circles.size()];
+	// Convert it to gray
+	cvtColor(src, src_gray, CV_BGR2GRAY);
 
-    // Draw the circles detected
-    for(size_t i = 0; i < circles.size(); i++)
-    {
-        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = cvRound(circles[i][2]);
+	// Apply the Hough Transform to find the circles
+	// CV_HOUGH_GRADIENT : detection method to use (currently, the only implemented one)
+	// 1 : inverse ratio of the accumulator resolution to the image resolution
+	// src_gray.rows/8 : minimum distance between the centers of the detected circles
+	// 200 : the higher threshold of the two passed to the Canny() edge detector (the lower one is twice smaller)
+	// 100 : the accumulator threshold for the circle centers at the detection stage. The smaller it is, the more false circles may be detected
+	// 0 : Minimum circle radius
+	// 0 : Maximum circle radius
 
-        Mat image(src.rows, src.cols, CV_8UC3, Scalar(0,0,0));
-        CerclesIsoles[i] = image;
+	vector<Vec3f> circles;
+	HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 0);
 
-        // circle center
-        circle(CerclesIsoles[i], center, 1, Scalar(0,255,0), -1, 8, 0);
-        // circle outline
-        circle(CerclesIsoles[i], center, radius, Scalar(0,0,255), 5, 8, 0);
+	cout<<"Nombre de pièces trouvées : "<<circles.size()<<endl;
 
-        for(int j = 0; j < src.rows; j++)
-        {
-            for(int k = 0; k < src.cols; k++)
-            {
-                // Si dans dans le cercle
-                if( sqrt( (k - center.x)*(k - center.x) + (j - center.y)*(j - center.y) ) < radius)
-                {
-                    CerclesIsoles[i].data[CerclesIsoles[i].step[0]*j + CerclesIsoles[i].step[1]* k + 0] = src.data[src.step[0]*j + src.step[1]* k + 0];
-                    CerclesIsoles[i].data[CerclesIsoles[i].step[0]*j + CerclesIsoles[i].step[1]* k + 1] = src.data[src.step[0]*j + src.step[1]* k + 1];;
-                    CerclesIsoles[i].data[CerclesIsoles[i].step[0]*j + CerclesIsoles[i].step[1]* k + 2] = src.data[src.step[0]*j + src.step[1]* k + 2];;
-                }
-            }
-        }
+	// Draw the circles detected
+	for( size_t i = 0; i < circles.size(); i++ )
+	{
+		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int radius = cvRound(circles[i][2]);
+		// circle center
+		circle( src, center, 3, Scalar(0,255,0), -1, 8, 0 );
+		// circle outline
+		circle( src, center, radius, Scalar(0,0,255), 3, 8, 0 );
+	}
 
-        // Center the image with the coin in the middle
-        //CerclesIsoles[i] = CerclesIsoles[i](Rect(10, 10, 100, 100) ); // using a rectangle
-        //CerclesIsoles[i] = CerclesIsoles[i](Range(center.x - radius, center.x + radius),Range(center.y - radius, center.y + radius));
-        //cout<<"Centre : "<<center<<endl;
-        //cout<<"Rayon : "<<radius<<endl;
-    }
+	// Show your results
+	namedWindow("Original image with coins", WINDOW_NORMAL);
+	resizeWindow("Original image with coins", 800, 600);
+	imshow("Original image with coins", src);
 
-    // Show original image
-    namedWindow("Original image with coins", WINDOW_NORMAL);
-    resizeWindow("Original image with coins", 800, 600);
-    imshow("Original image with coins", src);
 
-    // Show results
-    for(size_t i = 0; i < circles.size(); i++)
-    {
-        //string nameWin = "Hough Circle Transform";
-        string nameWin = string("Hough Circle Transform %d", i);
-        namedWindow(nameWin, WINDOW_NORMAL);
-        resizeWindow(nameWin, 800, 600);
-        imshow(nameWin, CerclesIsoles[i]);
-    }
-
-    waitKey(0);
-    return 0;
+	waitKey(0);
+	return 0;
 }
 
