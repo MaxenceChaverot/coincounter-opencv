@@ -50,11 +50,30 @@ int main(int argc, char* argv[])
 		circle( src, center, 3, Scalar(0,255,0), -1, 8, 0 );
 		// circle outline
 		circle( src, center, radius, Scalar(0,0,255), 3, 8, 0 );
+
+		//get the Rect containing the circle:
+		Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
+
+		// obtain the image ROI:
+		Mat roi(src, r);
+		
+		// make a black mask, same size:
+		Mat mask(roi.size(), roi.type(), Scalar::all(0));
+		// with a white, filled circle in it:
+		circle(mask, Point(radius,radius), radius, Scalar::all(255), -1);
+		
+		// combine roi & mask:
+		Mat eye_cropped = roi & mask;
+
+		namedWindow("Original image with coins", WINDOW_NORMAL);
+		resizeWindow("Original image with coins", src.cols, src.rows);
+		imshow("Original image with coins", src);
+
 	}
 
 	// Show your results
 	namedWindow("Original image with coins", WINDOW_NORMAL);
-	resizeWindow("Original image with coins", 800, 600);
+	resizeWindow("Original image with coins", src.cols, src.rows);
 	imshow("Original image with coins", src);
 
 
