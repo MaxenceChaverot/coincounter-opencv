@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 
 	// Show results for DEBUG
 
-	for(size_t i = 0; i < circles.size(); i++)
+	for(size_t i = 0; i < extractedCircles.size(); i++)
 	{
 		string nameWin = string("Extracted Circle  %d", i+1);
 		namedWindow(nameWin, WINDOW_NORMAL);
