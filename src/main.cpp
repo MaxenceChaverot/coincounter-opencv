@@ -13,13 +13,12 @@ int main(int argc, char* argv[])
 	/*Parsing Command Line Argument*/
 
 	if(argc < 2){
-		src = imread("img/pieces.jpg", 1);
+        src = imread("img/piecestest2.jpg", 1);
 	}
 	else{
 		src = imread(argv[1]);
 	}
 	/******************************/
-
 
 	Mat src_gray;
 
@@ -38,14 +37,21 @@ int main(int argc, char* argv[])
 	std::vector<Vec3f> circles;
 	std::vector<Mat> extractedCircles;
 
-	HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 0);
+    // Filtre de Canny :
+
+    //thresholding
+    //Mat threshed = new Mat(bmpImg.getWidth(),bmpImg.getHeight(), CvType.CV_8UC1);
+    //Imgproc.adaptiveThreshold(gray, threshed, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 75, 5);
+
+    GaussianBlur(src_gray, src_gray, cv::Size(9, 9), 2, 2);
+    HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
 
 	std::cout<<"Nombre de pièces trouvées : "<<circles.size()<<std::endl;
 
 	// Draw the circles detected and Extract them
 	for( size_t i = 0; i < circles.size(); i++ )
 	{
-		//DrawCircle
+        // DrawCircle
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
 		// circle center
@@ -59,7 +65,7 @@ int main(int argc, char* argv[])
 		Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
 		// obtain the image ROI:
-		Mat roi(src, r);
+        Mat roi(src, r);
 
 		// make a black mask, same size:
 		Mat mask(roi.size(), roi.type(), Scalar::all(0));
