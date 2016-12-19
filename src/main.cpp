@@ -2,7 +2,10 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
+
+#include "comparator.hpp"
 
 using namespace cv;
 
@@ -84,16 +87,28 @@ int main(int argc, char* argv[])
 	imshow("Original image with coins", src);
 
 
-	// Show results for DEBUG
+	Comparator orb_comparator(extractedCircles[0]);
+	orb_comparator.findKeyPointAndDescriptor();
+	orb_comparator.match();
 
+	Mat output = orb_comparator.outputMatches();
+
+	// Show results for DEBUG
+	/*
 	for(size_t i = 0; i < extractedCircles.size(); i++)
 	{
-		string nameWin = string("Extracted Circle  %d", i+1);
+		std::ostringstream s;
+		s << "Extracted Circle "<< i+1;
+		std::string nameWin(s.str());
 		namedWindow(nameWin, WINDOW_NORMAL);
 		resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
 		imshow(nameWin, extractedCircles[i]);
-	}
+	}*/
 
+	namedWindow("Matches", WINDOW_NORMAL);
+	resizeWindow("Matches", output.cols, output.rows);
+	imshow("Matches", output);
+	
 	waitKey(0);
 
 	return 0;
