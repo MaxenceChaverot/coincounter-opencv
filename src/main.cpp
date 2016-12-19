@@ -13,38 +13,85 @@ int main(int argc, char* argv[])
 	/*Parsing Command Line Argument*/
 
 	if(argc < 2){
-        src = imread("img/piecestest2.jpg", 1);
+        src = imread("img/PIECES.jpg", 1);
 	}
 	else{
 		src = imread(argv[1]);
 	}
 	/******************************/
 
-	Mat src_gray;
+    // FILTRE DE CANNY :
 
-	// Convert it to gray
-	cvtColor(src, src_gray, CV_BGR2GRAY);
+    Mat dst;
+    Mat detected_edges;
 
-	// Apply the Hough Transform to find the circles
-	// CV_HOUGH_GRADIENT : detection method to use (currently, the only implemented one)
-	// 1 : inverse ratio of the accumulator resolution to the image resolution
-	// src_gray.rows/8 : minimum distance between the centers of the detected circles
-	// 200 : the higher threshold of the two passed to the Canny() edge detector (the lower one is twice smaller)
-	// 100 : the accumulator threshold for the circle centers at the detection stage. The smaller it is, the more false circles may be detected
-	// 0 : Minimum circle radius
-	// 0 : Maximum circle radius
+    // Reduce noise with a kernel 3x3
+    blur(src, detected_edges, Size(3,3));
 
-	std::vector<Vec3f> circles;
-	std::vector<Mat> extractedCircles;
+    // Canny detector
+    Canny(src, detected_edges, 80, 90);
 
-    // Filtre de Canny :
+    // Using Canny's output as a mask, we display our result
+    dst = Scalar::all(0);
+    src.copyTo(dst, detected_edges);
 
-    //thresholding
-    //Mat threshed = new Mat(bmpImg.getWidth(),bmpImg.getHeight(), CvType.CV_8UC1);
-    //Imgproc.adaptiveThreshold(gray, threshed, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 75, 5);
+    // Show Canny Results
+    namedWindow("Canny Results", WINDOW_NORMAL);
+    resizeWindow("Canny Results", src.cols, src.rows);
+    imshow("Canny Results", dst);
 
-    GaussianBlur(src_gray, src_gray, cv::Size(9, 9), 2, 2);
+    // SMOOTH :
+
+    Mat smoothed;
+    GaussianBlur(dst, smoothed, cv::Size(9, 9), 2, 2);
+
+    // Show Smooth Results
+    namedWindow("Smooth Results", WINDOW_NORMAL);
+    resizeWindow("Smooth Results", src.cols, src.rows);
+    imshow("Smooth Results", smoothed);
+
+    // DILATATION :
+
+    Mat dilated;
+    dilate(smoothed, dilated, getStructuringElement(MORPH_ELLIPSE, cv::Size(16, 16)));
+
+    // Show dilatation Results
+    namedWindow("dilatation Results", WINDOW_NORMAL);
+    resizeWindow("dilatation Results", src.cols, src.rows);
+    imshow("dilatation Results", dilated);
+
+    // EROSION :
+
+    Mat eroded;
+    erode(dilated, eroded, getStructuringElement(MORPH_ELLIPSE, cv::Size(15, 15)));
+
+    // Show erosion Results
+    namedWindow("erosion Results", WINDOW_NORMAL);
+    resizeWindow("erosion Results", src.cols, src.rows);
+    imshow("erosion Results", eroded);
+
+    // DETECTION DE CERCLES :
+
+    // Convert it to gray
+    Mat src_gray;
+    cvtColor(eroded, src_gray, COLOR_BGR2GRAY);
+    GaussianBlur(src_gray, src_gray, cv::Size(9, 9),1,1);
+
+    // Apply the Hough Transform to find the circles
+    // CV_HOUGH_GRADIENT : detection method to use (currently, the only implemented one)
+    // 1 : inverse ratio of the accumulator resolution to the image resolution
+    // src_gray.rows/8 : minimum distance between the centers of the detected circles
+    // 200 : the higher threshold of the two passed to the Canny() edge detector (the lower one is twice smaller)
+    // 100 : the accumulator threshold for the circle centers at the detection stage. The smaller it is, the more false circles may be detected
+    // 0 : Minimum circle radius
+    // 0 : Maximum circle radius
+
+    std::vector<Vec3f> circles;
+    std::vector<Mat> extractedCircles;
     HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
+
+    //GaussianBlur(src_gray, src_gray, cv::Size(9, 9), 2, 2);
+    //HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
 
 	std::cout<<"Nombre de pièces trouvées : "<<circles.size()<<std::endl;
 
@@ -59,8 +106,7 @@ int main(int argc, char* argv[])
 		// circle outline
 		circle( src, center, radius, Scalar(0,0,255), 3, 8, 0 );
 
-
-		//Extract Circle
+        // Extract Circle
 		//get the Rect containing the circle:
 		Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
