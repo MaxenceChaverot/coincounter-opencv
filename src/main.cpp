@@ -2,7 +2,10 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
+
+#include "comparator.hpp"
 
 using namespace cv;
 
@@ -10,17 +13,22 @@ int main(int argc, char* argv[])
 {
 	Mat src;
 
-	/*Parsing Command Line Argument*/
+    /* Parsing Command Line Argument */
 
 	if(argc < 2){
-        src = imread("img/PIECES.jpg", 1);
+        src = imread("img/piecestest1.jpg", 1);
 	}
 	else{
 		src = imread(argv[1]);
 	}
+
 	/******************************/
 
-    // FILTRE DE CANNY :
+    //  PRE TRAITEMENT DE L'IMAGE :
+
+    /******************************/
+
+    // 1. FILTRE DE CANNY :
 
     Mat dst;
     Mat detected_edges;
@@ -35,42 +43,30 @@ int main(int argc, char* argv[])
     dst = Scalar::all(0);
     src.copyTo(dst, detected_edges);
 
-    // Show Canny Results
-    namedWindow("Canny Results", WINDOW_NORMAL);
-    resizeWindow("Canny Results", src.cols, src.rows);
-    imshow("Canny Results", dst);
-
-    // SMOOTH :
+    // 2. SMOOTH :
 
     Mat smoothed;
     GaussianBlur(dst, smoothed, cv::Size(9, 9), 2, 2);
 
-    // Show Smooth Results
-    namedWindow("Smooth Results", WINDOW_NORMAL);
-    resizeWindow("Smooth Results", src.cols, src.rows);
-    imshow("Smooth Results", smoothed);
-
-    // DILATATION :
+    // 3. DILATATION :
 
     Mat dilated;
     dilate(smoothed, dilated, getStructuringElement(MORPH_ELLIPSE, cv::Size(16, 16)));
 
-    // Show dilatation Results
-    namedWindow("dilatation Results", WINDOW_NORMAL);
-    resizeWindow("dilatation Results", src.cols, src.rows);
-    imshow("dilatation Results", dilated);
-
-    // EROSION :
+    // 4. EROSION :
 
     Mat eroded;
     erode(dilated, eroded, getStructuringElement(MORPH_ELLIPSE, cv::Size(15, 15)));
 
-    // Show erosion Results
-    namedWindow("erosion Results", WINDOW_NORMAL);
-    resizeWindow("erosion Results", src.cols, src.rows);
-    imshow("erosion Results", eroded);
+    /******************************/
 
-    // DETECTION DE CERCLES :
+    //  DETECTION DE CERCLES :
+
+    /******************************/
+
+    // Même résultat :
+    //GaussianBlur(src_gray, src_gray, cv::Size(9, 9), 2, 2);
+    //HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
 
     // Convert it to gray
     Mat src_gray;
@@ -89,9 +85,6 @@ int main(int argc, char* argv[])
     std::vector<Vec3f> circles;
     std::vector<Mat> extractedCircles;
     HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
-
-    //GaussianBlur(src_gray, src_gray, cv::Size(9, 9), 2, 2);
-    //HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
 
 	std::cout<<"Nombre de pièces trouvées : "<<circles.size()<<std::endl;
 
@@ -129,16 +122,39 @@ int main(int argc, char* argv[])
 	resizeWindow("Original image with coins", src.cols, src.rows);
 	imshow("Original image with coins", src);
 
+    /******************************/
 
-	// Show results for DEBUG
+    //  COMPARAISON AVEC LA BASE DE DONNEE :
 
-	for(size_t i = 0; i < extractedCircles.size(); i++)
+    /******************************/
+
+    Comparator orb_comparator(extractedCircles[0]);
+    orb_comparator.findKeyPointAndDescriptor();
+    orb_comparator.match();
+
+    Mat output = orb_comparator.outputMatches();
+
+    /******************************/
+
+    //  AFFICHAGE DES RESULTATS :
+
+    /******************************/
+
+    // Extracted circles
+    /*for(size_t i = 0; i < extractedCircles.size(); i++)
 	{
-		string nameWin = string("Extracted Circle  %d", i+1);
-		namedWindow(nameWin, WINDOW_NORMAL);
-		resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
-		imshow(nameWin, extractedCircles[i]);
-	}
+        std::ostringstream s;
+        s << "Extracted Circle "<< i+1;
+        std::string nameWin(s.str());
+        namedWindow(nameWin, WINDOW_NORMAL);
+        resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
+        imshow(nameWin, extractedCircles[i]);
+    }*/
+
+    // Matches
+    namedWindow("Matches", WINDOW_NORMAL);
+    resizeWindow("Matches", output.cols, output.rows);
+    imshow("Matches", output);
 
 	waitKey(0);
 
