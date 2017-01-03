@@ -13,7 +13,7 @@ class Comparator{
 	Ptr<FeatureDetector> orb_feature_detector;
 	Ptr<DescriptorExtractor> descriptor_extractor;
 	Ptr<DescriptorMatcher> matcher;
-	
+
 	std::vector<KeyPoint> keypoints_bdd, keypoints_to_match;
 	Mat descriptors_bdd, descriptors_to_match;
 	std::vector<DMatch> matches;

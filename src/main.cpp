@@ -13,20 +13,65 @@ int main(int argc, char* argv[])
 {
 	Mat src;
 
-	/*Parsing Command Line Argument*/
+	/* Parsing Command Line Argument */
 
 	if(argc < 2){
-        src = imread("img/piecestest2.jpg", 1);
+		src = imread("img/piecestest1.jpg", 1);
 	}
 	else{
 		src = imread(argv[1]);
 	}
+
 	/******************************/
 
-	Mat src_gray;
+	//  PRE TRAITEMENT DE L'IMAGE :
+
+	/******************************/
+
+	// 1. FILTRE DE CANNY :
+
+	Mat dst;
+	Mat detected_edges;
+
+	// Reduce noise with a kernel 3x3
+	blur(src, detected_edges, Size(3,3));
+
+	// Canny detector
+	Canny(src, detected_edges, 80, 90);
+
+	// Using Canny's output as a mask, we display our result
+	dst = Scalar::all(0);
+	src.copyTo(dst, detected_edges);
+
+	// 2. SMOOTH :
+
+	Mat smoothed;
+	GaussianBlur(dst, smoothed, cv::Size(9, 9), 2, 2);
+
+	// 3. DILATATION :
+
+	Mat dilated;
+	dilate(smoothed, dilated, getStructuringElement(MORPH_ELLIPSE, cv::Size(16, 16)));
+
+	// 4. EROSION :
+
+	Mat eroded;
+	erode(dilated, eroded, getStructuringElement(MORPH_ELLIPSE, cv::Size(15, 15)));
+
+	/******************************/
+
+	//  DETECTION DE CERCLES :
+
+	/******************************/
+
+	// Même résultat :
+	//GaussianBlur(src_gray, src_gray, cv::Size(9, 9), 2, 2);
+	//HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
 
 	// Convert it to gray
-	cvtColor(src, src_gray, CV_BGR2GRAY);
+	Mat src_gray;
+	cvtColor(eroded, src_gray, COLOR_BGR2GRAY);
+	GaussianBlur(src_gray, src_gray, cv::Size(9, 9),1,1);
 
 	// Apply the Hough Transform to find the circles
 	// CV_HOUGH_GRADIENT : detection method to use (currently, the only implemented one)
@@ -39,22 +84,14 @@ int main(int argc, char* argv[])
 
 	std::vector<Vec3f> circles;
 	std::vector<Mat> extractedCircles;
-
-    // Filtre de Canny :
-
-    //thresholding
-    //Mat threshed = new Mat(bmpImg.getWidth(),bmpImg.getHeight(), CvType.CV_8UC1);
-    //Imgproc.adaptiveThreshold(gray, threshed, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 75, 5);
-
-    GaussianBlur(src_gray, src_gray, cv::Size(9, 9), 2, 2);
-    HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
+	HoughCircles(src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
 
 	std::cout<<"Nombre de pièces trouvées : "<<circles.size()<<std::endl;
 
 	// Draw the circles detected and Extract them
 	for( size_t i = 0; i < circles.size(); i++ )
 	{
-        // DrawCircle
+		// DrawCircle
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
 		// circle center
@@ -62,13 +99,12 @@ int main(int argc, char* argv[])
 		// circle outline
 		circle( src, center, radius, Scalar(0,0,255), 3, 8, 0 );
 
-
-		//Extract Circle
+		// Extract Circle
 		//get the Rect containing the circle:
 		Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
 		// obtain the image ROI:
-        Mat roi(src, r);
+		Mat roi(src, r);
 
 		// make a black mask, same size:
 		Mat mask(roi.size(), roi.type(), Scalar::all(0));
@@ -86,6 +122,11 @@ int main(int argc, char* argv[])
 	resizeWindow("Original image with coins", src.cols, src.rows);
 	imshow("Original image with coins", src);
 
+	/******************************/
+
+	//  COMPARAISON AVEC LA BASE DE DONNEE :
+
+	/******************************/
 
 	Comparator orb_comparator(extractedCircles[0]);
 	orb_comparator.findKeyPointAndDescriptor();
@@ -95,20 +136,20 @@ int main(int argc, char* argv[])
 
 	// Show results for DEBUG
 	/*
-	for(size_t i = 0; i < extractedCircles.size(); i++)
-	{
-		std::ostringstream s;
-		s << "Extracted Circle "<< i+1;
-		std::string nameWin(s.str());
-		namedWindow(nameWin, WINDOW_NORMAL);
-		resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
-		imshow(nameWin, extractedCircles[i]);
-	}*/
+	   for(size_t i = 0; i < extractedCircles.size(); i++)
+	   {
+	   std::ostringstream s;
+	   s << "Extracted Circle "<< i+1;
+	   std::string nameWin(s.str());
+	   namedWindow(nameWin, WINDOW_NORMAL);
+	   resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
+	   imshow(nameWin, extractedCircles[i]);
+	   }*/
 
 	namedWindow("Matches", WINDOW_NORMAL);
 	resizeWindow("Matches", output.cols, output.rows);
 	imshow("Matches", output);
-	
+
 	waitKey(0);
 
 	return 0;
