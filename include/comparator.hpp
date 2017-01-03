@@ -20,6 +20,7 @@ class Comparator{
 
 	public:
 	Comparator(Mat img_in);
+	void setBddImg(std::string img_path);
 	void findKeyPointAndDescriptor();
 	void match();
 	Mat outputMatches();

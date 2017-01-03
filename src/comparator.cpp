@@ -25,6 +25,7 @@ void Comparator::findKeyPointAndDescriptor(){
 
 	orb_feature_detector->detect(bdd_gray,keypoints_bdd);
 	orb_feature_detector->detect(img_gray,keypoints_to_match);	
+	//std::cout<<"Nb features "<<keypoints_to_match.size()<<std::endl;
 
 	//Second Step : Find Descriptor
 
@@ -39,6 +40,7 @@ void Comparator::match(){
 	//Third Step : Match It
 
 	matcher->match(descriptors_to_match,descriptors_bdd, matches);	
+	//std::cout<<"Nb descri = "<<matches.size()<<std::endl;
 }
 
 Mat Comparator::outputMatches(){
@@ -48,4 +50,11 @@ Mat Comparator::outputMatches(){
 	drawMatches(img_source,keypoints_to_match,bdd,keypoints_bdd,matches,output);
 
 	return output;
+}
+
+
+void Comparator::setBddImg(std::string img_path){
+
+	bdd = imread(img_path);
+	cvtColor(bdd, bdd_gray, CV_BGR2GRAY);
 }
