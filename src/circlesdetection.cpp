@@ -1,11 +1,13 @@
 #include "circlesdetection.hpp"
 
-CirclesDetection::CirclesDetection(Mat img_in, int detection_methode_number):img_source(img_in), detection_methode_number(detection_methode_number)
+// Ctor
+CirclesDetection::CirclesDetection(Mat img_in):img_source(img_in)
 {}
 
+// Image filtering (Canny Filter)
 Mat CirclesDetection::CannyFilter()
 {
-    Mat dst;
+    Mat filtered_image;
     Mat detected_edges;
 
     // Reduce noise with a kernel 3x3
@@ -15,95 +17,121 @@ Mat CirclesDetection::CannyFilter()
     Canny(img_source, detected_edges, 80, 90);
 
     // Using Canny's output as a mask, we display our result
-    dst = Scalar::all(0);
-    img_source.copyTo(dst, detected_edges);
+    filtered_image = Scalar::all(0);
+    img_source.copyTo(filtered_image, detected_edges);
 
-    return dst;
+    // Return the filtered image
+    return filtered_image;
 }
 
-
+// Image smoothing
 Mat CirclesDetection::Smooth(Mat img)
 {
-    Mat smoothed;
+    Mat smoothed_image;
+    GaussianBlur(img, smoothed_image, cv::Size(9, 9), 2, 2);
 
-    GaussianBlur(img, smoothed, cv::Size(9, 9), 2, 2);
-
-    return smoothed;
+    // Return smoothed image
+    return smoothed_image;
 }
 
-
+// Image dilatation
 Mat CirclesDetection::Dilatation(Mat img)
 {
-    Mat dilated;
+    Mat dilated_image;
+    dilate(img, dilated_image, getStructuringElement(MORPH_ELLIPSE, cv::Size(16, 16)));
 
-    dilate(img, dilated, getStructuringElement(MORPH_ELLIPSE, cv::Size(16, 16)));
-
-    return dilated;
+    // Return the dilated image
+    return dilated_image;
 }
 
+// Image erosion
 Mat CirclesDetection::Erosion(Mat img)
 {
-    Mat eroded;
+    Mat eroded_image;
+    erode(img, eroded_image, getStructuringElement(MORPH_ELLIPSE, cv::Size(15, 15)));
 
-    erode(img, eroded, getStructuringElement(MORPH_ELLIPSE, cv::Size(15, 15)));
-
-    return eroded;
+    // Return the reoded image
+    return eroded_image;
 }
 
+// Convert an image to gray
 void CirclesDetection::ConvertToGray(Mat img)
 {
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
     GaussianBlur(img_gray, img_gray, cv::Size(9, 9),1,1);
 }
 
+// Draw the detected circles on the source image
 void CirclesDetection::DrawCirclesOnImageSource(std::vector<Vec3f> circles)
 {
-        // Draw the circles detected on the original image
+    // Draw the circles detected on the original image
 	for( size_t i = 0; i < circles.size(); i++ )
 	{
-                // DrawCircle
+        // DrawCircle
 		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
 
-		// circle center
+        // Circle center
 		circle(img_source, center, 3, Scalar(0,255,0), -1, 8, 0 );
-		// circle outline
+        // Circle outline
 		circle(img_source, center, radius, Scalar(0,0,255), 3, 8, 0 );
 	}
 }
 
+// Fill the vector of all extracted circles
 void CirclesDetection::FillExtractedCircles(std::vector<Vec3f> circles)
 {
-        // Extract the circles detected
+    // Extract the circles detected
 	for( size_t i = 0; i < circles.size(); i++ )
 	{
-                // Extract Circle
-		//get the Rect containing the circle:
+        // Get the Rect containing the circle:
+        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+        int radius = cvRound(circles[i][2]);
 		Rect r(center.x-radius, center.y-radius, radius*2,radius*2);
 
-		// obtain the image ROI:
-                Mat roi(src, r);
+        // Obtain the image ROI:
+        Mat roi(img_source, r);
 
-		// make a black mask, same size:
+        // Make a black mask, same size:
 		Mat mask(roi.size(), roi.type(), Scalar::all(0));
-		// with a white, filled circle in it:
+        // With a white, filled circle in it:
 		circle(mask, Point(radius,radius), radius, Scalar::all(255), -1);
 
-		// combine roi & mask:
+        // Combine roi & mask:
 		Mat circleCropped = roi & mask;
 
+        // Fill the output vector
 		extractedCircles.push_back(circleCropped);
 	}
 }
 
-void CirclesDetection::CirclesDetectionWithPreTraitment()
+// First detection method (detection_methode_number = 0) : without image pretreatment
+void CirclesDetection::CirclesDetectionWithoutPretreatment()
 {
-    // Image pre traitment
-    Mat dst = CannyFilter();
-    Mat smoothed = Smooth(dst);
-    Mat dilated = Dilatation(smoothed);
-    Mat eroded = Erosion(dilated);
-    Mat img_gray = ConvertToGray(eroded);
+    // Convert image to Gray
+    cvtColor(img_source, img_gray, COLOR_BGR2GRAY);
+
+    // Detect circles
+    std::vector<Vec3f> circles;
+    GaussianBlur(img_gray, img_gray, cv::Size(9, 9), 2, 2);
+    HoughCircles(img_gray, circles, CV_HOUGH_GRADIENT, 1, img_gray.rows/8, 100, 50, 0, 0);
+
+    // Draw circles detected on image source
+    DrawCirclesOnImageSource(circles);
+
+    // Extract circles detected
+    FillExtractedCircles(circles);
+}
+
+// Second detection method (detection_methode_number = 1) : with image pretreatment
+void CirclesDetection::CirclesDetectionWithPretreatment()
+{
+    // Image pretreatment
+    Mat filtered_image = CannyFilter();
+    Mat smoothed_image = Smooth(filtered_image);
+    Mat dilated_image = Dilatation(smoothed_image);
+    Mat eroded_image = Erosion(dilated_image);
+    ConvertToGray(eroded_image);
 
     // Apply the Hough Transform to find the circles
     // CV_HOUGH_GRADIENT : detection method to use (currently, the only implemented one)
@@ -115,7 +143,7 @@ void CirclesDetection::CirclesDetectionWithPreTraitment()
     // 0 : Maximum circle radius
 
     std::vector<Vec3f> circles;
-    HoughCircles(img_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
+    HoughCircles(img_gray, circles, CV_HOUGH_GRADIENT, 1, img_gray.rows/8, 100, 50, 0, 0);
 
     // Draw circles detected on image source
     DrawCirclesOnImageSource(circles);
@@ -124,42 +152,27 @@ void CirclesDetection::CirclesDetectionWithPreTraitment()
     FillExtractedCircles(circles);
 }
 
-
-void CirclesDetection::CirclesDetectionWithoutPreTraitment()
+// Circles detection function
+void CirclesDetection::DetectCircles(int detection_methode_number)
 {
-    // Convert image to Gray
-    cvtColor(img_source, img_gray, COLOR_BGR2GRAY);
-
-    // Detect circles
-    GaussianBlur(img_gray, img_gray, cv::Size(9, 9), 2, 2);
-    HoughCircles(img_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 100, 50, 0, 0);
-
-    // Draw circles detected on image source
-    DrawCirclesOnImageSource(circles);
-
-    // Extract circles detected
-    FillExtractedCircles(circles);
-}
-
-
-void DetectCircles()
-{
-    if( detection_methode_number == 0)
+    if(detection_methode_number == 1)
     {
-         CirclesDetectionWithoutPreTraitment();
+         CirclesDetectionWithoutPretreatment(); // Without image pretreatment
     }
-    else if( detection_methode_number == 1)
+    else if(detection_methode_number == 2)
     {
-         CirclesDetectionWithPreTraitment();
+         CirclesDetectionWithPretreatment(); // With image pretreatment
     }
 }
 
-std::vector<Mat> GetOutputExtractedCircles()
+// Get output vector with all extracted circles
+std::vector<Mat> CirclesDetection::GetOutputExtractedCircles()
 {
      return extractedCircles;
 }
 
-Mat GetOutputImage()
+// Get the image with all extracted circles drawn
+Mat CirclesDetection::GetOutputImage()
 {
      return img_source;
 }

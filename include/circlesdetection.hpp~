@@ -46,7 +46,7 @@ public:
         CirclesDetection(Mat img_in);
 
         // Circles detection function
-        // The value of detection_methode_number can be 1 or 2 :
+        // The value of detection_methode_number can be 0 or 1 :
         // If 1 : the detection is done without any pretreatment
         // If 2 : the detection is done with pretreatment (Canny filter, dilatation, erosion)
         void DetectCircles(int detection_methode_number);
