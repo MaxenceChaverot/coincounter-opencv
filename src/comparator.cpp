@@ -1,16 +1,15 @@
 #include "comparator.hpp"
 
-Comparator::Comparator(Mat img_in):img_source(img_in)
+Comparator::Comparator(Mat img_in, std::string algorithmName):img_source(img_in)
 {
-	bdd = imread("img/bdd/1cent.png");
+	bdd = imread("img/bdd/2_cent.png");
 	// Convert it to gray
 	cvtColor(bdd, bdd_gray, CV_BGR2GRAY);
 	cvtColor(img_source, img_gray, CV_BGR2GRAY);
 
-	orb_feature_detector = FeatureDetector::create("ORB");
-
 	//Orb descriptor constructor called by default
-	descriptor_extractor = DescriptorExtractor::create("ORB");
+	feature_detector = FeatureDetector::create(algorithmName);
+	descriptor_extractor = DescriptorExtractor::create(algorithmName);
 	matcher = DescriptorMatcher::create("BruteForce-Hamming");
 }
 
@@ -23,9 +22,8 @@ void Comparator::findKeyPointAndDescriptor(){
 
 	//First Step : Find Interest point
 
-	orb_feature_detector->detect(bdd_gray,keypoints_bdd);
-	orb_feature_detector->detect(img_gray,keypoints_to_match);	
-	//std::cout<<"Nb features "<<keypoints_to_match.size()<<std::endl;
+	feature_detector->detect(bdd_gray,keypoints_bdd);
+	feature_detector->detect(img_gray,keypoints_to_match);	
 
 	//Second Step : Find Descriptor
 
@@ -37,10 +35,37 @@ void Comparator::findKeyPointAndDescriptor(){
 
 void Comparator::match(){
 
-	//Third Step : Match It
+	int min_dist = 100;
+	int max_dist = 0;
 
+	//Third Step : Match It
+	Mat mask;
 	matcher->match(descriptors_to_match,descriptors_bdd, matches);	
-	//std::cout<<"Nb descri = "<<matches.size()<<std::endl;
+
+	//Find good matches = distance lower than 3*min_dist
+	
+	for( int i = 0; i < descriptors_to_match.rows; i++ )
+	{
+	    int dist = matches[i].distance;
+	
+	    if( dist < min_dist ) 
+	        min_dist = dist;
+	    if( dist > max_dist ) 
+	        max_dist = dist;
+	}
+
+	for( int i = 0; i < descriptors_to_match.rows; i++ )
+	{ 
+	    if( matches[i].distance <= std::max((float)3*min_dist, (float)0.02) )
+	        good_matches.push_back( matches[i]); 
+	}
+
+	std::cout<<"Good Match : "<<good_matches.size()<<std::endl;
+	
+
+	
+
+	//Mat H = findHomography(img_gray,bdd_gray,CV_RANSAC,mask)
 }
 
 Mat Comparator::outputMatches(){

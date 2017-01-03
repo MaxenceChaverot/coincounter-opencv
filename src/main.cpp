@@ -6,11 +6,23 @@
 #include <stdio.h>
 
 #include "comparator.hpp"
+#include "bddimage.hpp"
 
 using namespace cv;
 
 int main(int argc, char* argv[])
 {
+
+	std::cout<<"Test Bdd"<<std::endl;
+
+	BddImage imgbdd;
+
+	std::cout<<"Done"<<std::endl;
+
+
+
+	std::cout<<"Program start."<<std::endl; 
+
 	Mat src;
 
 	/* Parsing Command Line Argument */
