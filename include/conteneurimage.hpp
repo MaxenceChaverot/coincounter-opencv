@@ -15,26 +15,20 @@ class ConteneurImage{
 	public:
 
 		Mat img;
-		Mat img_grey;
 		
 		std::vector<KeyPoint> keypoints;
 		Mat descriptors;
 
-		//If label = -1, image is unlabelled
-		int label;
-
 		ConteneurImage();
-		ConteneurImage(std::string pathToImg, bool labelInFileName = false);
-		ConteneurImage(Mat M, int _label = -1);
-		ConteneurImage(std::vector<KeyPoint> kp, int _label = -1);
-		ConteneurImage(std::vector<KeyPoint> kp, Mat _descriptors, int label = -1);
+		~ConteneurImage();
+		ConteneurImage(std::string pathToImg);
+		ConteneurImage(Mat M);
+		ConteneurImage(std::vector<KeyPoint> kp);
+		ConteneurImage(std::vector<KeyPoint> kp, Mat _descriptors);
 
 		bool isImgLoad();
 		bool areKpLoad();
 		bool areDescriptorsLoad();
-
-		void loadImgFromDisk(std::string pathToImg);
-		void retrieveLabelInFileName(std::string pathToImg);
 
 		void clear();
 
