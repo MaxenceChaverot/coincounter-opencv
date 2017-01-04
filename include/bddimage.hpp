@@ -9,6 +9,8 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/features2d/features2d.hpp"
 
+#include "comparator.hpp"
+
 using namespace cv;
 
 typedef std::map<int,std::vector<Mat> > MatMap;
@@ -23,19 +25,22 @@ class BddImage{
 	KpMap kpMap; //Map of keypoints
 	MatMap descriptorMap; //map of the descriptor
 
-	bool kpLoad;
+	std::string pathToBddFolder;
+
 	bool imgLoad;
+	bool kpLoad;
 	bool descriptorLoad;
 
-	void loadImgFromFolder(std::string pathToImgFolder);
+	std::string cleanPathString(std::string path);
+	void loadImg();
 
 	public:
 	BddImage(std::string pathToImgFolder = "./img/bdd/");
 	//Later : think about a keypoint writer/reader 
 
-	bool areKpLoad();
 	bool areImgLoad();
-	bool areDescriptorLoad();
+	bool& getKpLoad();
+	bool& getDescriptorLoad();
 	
 	MatMap& getDescriptorMap();
 	MatMap& getOriginalImgs();
@@ -47,8 +52,11 @@ class BddImage{
 	const KpMap& getconstKpMap();
 	const MatMap& getconstDescriptorMap();
 
-	//void clean();
-	//void reload();
+	void clean();
+	void reload();
+	void setBddFolder(std::string pathToImgFolder);
+	void fillKpMap(Comparator comparator);
+	void fillDescriptorMap(Comparator comparator);
 };
 
 #endif //BDDIMAGE_HPP
