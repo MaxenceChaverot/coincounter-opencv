@@ -27,20 +27,21 @@ static void help()
 
 int main(int argc, char* argv[])
 {
+    // Help message
 	help();
+
+    std::cout<<"Program start."<<std::endl;
 	
     /*std::cout<<"Test Bdd"<<std::endl;
-
 	BddImage imgbdd;
-
     std::cout<<"Done"<<std::endl;*/
-
-	std::cout<<"Program start."<<std::endl; 
     
 	Mat src;
     int detection_number_method = 1; // Circles detection without pretreatment is used by default
 
+     /****************************************************************/
 	/* Parsing Command Line Argument */
+     /****************************************************************/
 
     // path = the path of the source image
     // method_num = if 0, the detection is done without pretreatment, if 1, the detection is done with pretreatment
@@ -81,7 +82,10 @@ int main(int argc, char* argv[])
         std::cout<<"Circles detection without image pretreatment is used by default"<<std::endl;
     }
 
+    /****************************************************************/
     /* Circles Detection */   
+    /****************************************************************/
+
     CirclesDetection circles_Detection(src);
     circles_Detection.DetectCircles(detection_number_method);
     std::vector<Mat> extractedCircles = circles_Detection.GetOutputExtractedCircles();
@@ -95,29 +99,45 @@ int main(int argc, char* argv[])
     resizeWindow("Original image with coins", img_with_circles_drawn.cols, img_with_circles_drawn.rows);
     imshow("Original image with coins", img_with_circles_drawn);
 
-     /* Comparison with the database */
-
     /*
-	Comparator orb_comparator(extractedCircles[0]);
-	orb_comparator.findKeyPointAndDescriptor();
-	orb_comparator.match();
-
-	Mat output = orb_comparator.outputMatches();
-
-	// Show results for DEBUG
+    // Show results for DEBUG
     for(size_t i = 0; i < extractedCircles.size(); i++)
     {
-	   std::ostringstream s;
-	   s << "Extracted Circle "<< i+1;
-	   std::string nameWin(s.str());
-	   namedWindow(nameWin, WINDOW_NORMAL);
-	   resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
-	   imshow(nameWin, extractedCircles[i]);
-     }
+       std::ostringstream s;
+       s << "Extracted Circle "<< i+1;
+       std::string nameWin(s.str());
+       namedWindow(nameWin, WINDOW_NORMAL);
+       resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
+       imshow(nameWin, extractedCircles[i]);
+     }*/
 
-	namedWindow("Matches", WINDOW_NORMAL);
-	resizeWindow("Matches", output.cols, output.rows);
-    imshow("Matches", output);*/
+    /****************************************************************/
+    /* Comparison with the database */
+    /****************************************************************/
+
+    Mat img_bdd = imread("img/bdd/1_cent.png");
+    Comparator orb_comparator("ORB");
+
+    // Find the keypoints
+    std::vector<KeyPoint> keypoints_to_match = orb_comparator.findKeyPoints(src);
+    std::vector<KeyPoint> keypoints_bdd = orb_comparator.findKeyPoints(img_bdd);
+
+    // Find the descriptors
+    Mat descriptors_to_match = orb_comparator.findDescriptors(src, keypoints_to_match);
+    Mat descriptors_bdd = orb_comparator.findDescriptors(img_bdd, keypoints_bdd);
+
+    // Find the good matches
+    std::vector<DMatch> good_matches = orb_comparator.match(descriptors_to_match, descriptors_bdd);
+
+    // Draw matches
+    Mat output = orb_comparator.drawOutputMatches(src, img_bdd, keypoints_to_match, keypoints_bdd, good_matches);
+
+    // Get the homography between two images
+    //Mat H = orb_comparator.GetHomography(src, img_bdd);
+
+    namedWindow("Matches", WINDOW_NORMAL);
+    resizeWindow("Matches", output.cols, output.rows);
+    imshow("Matches", output);
 
 	waitKey(0);
 
