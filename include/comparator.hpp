@@ -41,7 +41,10 @@ public:
 	Mat drawOutputMatches(Mat img_source, Mat img_bdd, std::vector<KeyPoint> keypoints_to_match, std::vector<KeyPoint> keypoints_bdd, std::vector<DMatch> matches);
 
         // Get the homography between two images
-        Mat GetHomography(Mat img_source, Mat img_bdd);
+        Mat GetHomography(std::vector<KeyPoint> kp1,std::vector<KeyPoint> kp2,std::vector<DMatch> matches, int& outputScore);
+
+		//Calculate the score 
+		int calculateScore(Mat mask);
 };
 
 #endif //COMPARATOR_HPP
