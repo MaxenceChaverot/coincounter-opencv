@@ -29,27 +29,38 @@ int main(int argc, char* argv[])
 	CommandLineParser parser(argc, argv, keys);
 	parseParameters(parser, im_path,bdd_path,ip_num,method_num);
 
+	//Loading Image to Compare
 	Mat src = imread(im_path);
-	int detection_number_method = method_num; 
+
+
 	/****************************************************************/
 	/* Circles Detection */   
 	/****************************************************************/
 
+	int detection_number_method = method_num; 
 	CirclesDetection circles_Detection(src);
 	circles_Detection.DetectCircles(detection_number_method);
 	std::vector<Mat> extractedCircles = circles_Detection.GetOutputExtractedCircles();
-	Mat img_with_circles_drawn = circles_Detection.GetOutputImage();
-
 	std::cout<<"Number of coins finded : "<<extractedCircles.size()<<std::endl;
 
-	/* Show original Image with circles detected drawn */
+	/****************************************************************/
+	/* Create Vector of ConteneurImage with the extracted Circle*/   
+	/****************************************************************/
 
+	std::vector<ConteneurImage> circleToCompare;
+
+	for(int i = 0; i < extractedCircles.size(); ++i){
+		ConteneurImage circle(extractedCircles[i]);
+		circleToCompare.push_back(circle);
+	}
+
+	/* Show original Image with circles detected drawn */
+	Mat img_with_circles_drawn = circles_Detection.GetOutputImage();
 	namedWindow("Original image with coins", WINDOW_NORMAL);
 	resizeWindow("Original image with coins", img_with_circles_drawn.cols, img_with_circles_drawn.rows);
 	imshow("Original image with coins", img_with_circles_drawn);
 
-	/*
-	// Show results for DEBUG
+	/* Show results for DEBUG
 	for(size_t i = 0; i < extractedCircles.size(); i++)
 	{
 	std::ostringstream s;
@@ -61,28 +72,80 @@ int main(int argc, char* argv[])
 	}*/
 
 	/****************************************************************/
-	/* Comparison with the database */
+	/* Create Comparator */
 	/****************************************************************/
 
-	Mat img_bdd = imread("img/bdd/1_cent.png");
-	Comparator orb_comparator("ORB");
+	Comparator comparator(ip_num); //ORB By Default
 
-	// Find the keypoints
-	std::vector<KeyPoint> keypoints_to_match = orb_comparator.findKeyPoints(src);
-	std::vector<KeyPoint> keypoints_bdd = orb_comparator.findKeyPoints(img_bdd);
+	/****************************************************************/
+	/* Create and fill BDD */
+	/****************************************************************/
 
-	// Find the descriptors
-	Mat descriptors_to_match = orb_comparator.findDescriptors(src, keypoints_to_match);
-	Mat descriptors_bdd = orb_comparator.findDescriptors(img_bdd, keypoints_bdd);
+	BddImage bdd(bdd_path);
 
-	// Find the good matches
-	std::vector<DMatch> good_matches = orb_comparator.match(descriptors_to_match, descriptors_bdd);
+	if(bdd.getMap().empty()){
+	   	std::cout<<"Bdd loading error"<<std::endl;	
+		exit(0);
+	}
 
-	// Draw matches
-	Mat output = orb_comparator.drawOutputMatches(src, img_bdd, keypoints_to_match, keypoints_bdd, good_matches);
 
-	// Get the homography between two images
-	//Mat H = orb_comparator.GetHomography(src, img_bdd);
+	bdd.fillKpAndDescriptor(comparator);
+	
+	std::cout<<"Bdd is filled with "<<bdd.getMap().size()<<" images."<<std::endl;
+
+	/****************************************************************/
+	/* Compute keypoints and descriptors of ConteneurImage inside the vector */
+	/****************************************************************/
+	
+	for(int i = 0; i < circleToCompare.size(); ++i){
+		circleToCompare[i].keypoints = comparator.findKeyPoints(circleToCompare[i].img);
+		circleToCompare[i].descriptors = comparator.findDescriptors(circleToCompare[i].img, circleToCompare[i].keypoints);
+	}
+	
+		
+	/****************************************************************/
+	/*(For only one circle extrated : TESTING)*/
+	/****************************************************************/
+
+	/****************************************************************/
+	/*Compare Extracted Circle to Database*/
+	/*  -For Each Image in the Database
+	 *   	- Compute Matches between the images.
+	 *  	- Compute Homography
+	 *  	- Compute score
+	 *  -Find the Best score */
+	/****************************************************************/
+
+	ConteneurImage circle = circleToCompare[3];	
+
+	std::map<int,std::vector<ConteneurImage> >::iterator it,itBest;
+
+	int bestScore = 0;
+	int bestIndex = -1;
+	std::vector<DMatch> bestMatches;
+
+	for(it = bdd.getMap().begin(); it != bdd.getMap().end(); ++it){
+		for(int i = 0; i < it->second.size(); ++i){
+			int score = 0;	
+			std::vector<DMatch> matches = comparator.match(circle.descriptors,it->second[i].descriptors);
+		
+			Mat H = comparator.GetHomography(circle.keypoints,it->second[i].keypoints, matches, score);	
+
+			std::cout<<"For label = "<<it->first<<", Score = "<<score<<std::endl;
+
+			if(score > bestScore){
+				bestScore = score;
+				itBest = it;
+				bestIndex = i;
+				bestMatches = matches;
+			}
+		}
+	}
+
+	std::cout<<"The coin Value is "<<itBest->first<<std::endl;
+
+	//Draw the best Match
+	Mat output = comparator.drawOutputMatches(circle.img,itBest->second[bestIndex].img,circle.keypoints,itBest->second[bestIndex].keypoints,bestMatches);
 
 	namedWindow("Matches", WINDOW_NORMAL);
 	resizeWindow("Matches", output.cols, output.rows);
