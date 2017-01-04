@@ -84,3 +84,4 @@ int BddImage::retrieveLabelInFileName(std::string pathToImg){
 	return -1;
 }
 
+std::map<int,std::vector<ConteneurImage> >& BddImage::getMap(){ return bddMap;}

@@ -28,11 +28,14 @@ class BddImage{
 	void loadImg();
 
 	public:
+
 	BddImage(std::string pathToImgFolder = "./img/bdd/");
 	//Later : think about a keypoint writer/reader 
 
 	void fillKpAndDescriptor(Comparator comparator);
 	int retrieveLabelInFileName(std::string pathToImg);
+
+	std::map<int,std::vector<ConteneurImage> >& getMap();
 };
 
 #endif //BDDIMAGE_HPP
