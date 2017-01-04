@@ -11,15 +11,21 @@
 
 using namespace cv;
 
+typedef std::map<int,std::vector<Mat> > MatMap;
+typedef std::vector<KeyPoint> ImgKeyPoints;
+typedef std::map<int, std::vector<ImgKeyPoints> > KpMap;
+
 class BddImage{
 
 	//The key are the value of the coin (in cent e.g : 1,5,10,20,50,100,200)
-	std::map<int,Mat> imgMap; //original image
-	std::map<int,Mat> greyImgMap; //img are in grey
-	std::map<int, KeyPoint> kpMap; //Map of keypoints
+	MatMap imgMap; //original image
+	MatMap greyImgMap; //img are in grey
+	KpMap kpMap; //Map of keypoints
+	MatMap descriptorMap; //map of the descriptor
 
 	bool kpLoad;
 	bool imgLoad;
+	bool descriptorLoad;
 
 	void loadImgFromFolder(std::string pathToImgFolder);
 
@@ -29,11 +35,20 @@ class BddImage{
 
 	bool areKpLoad();
 	bool areImgLoad();
-	const std::map<int, Mat>& getOriginalImgs();
-	const std::map<int, Mat>& getImgMap();
-	const std::map<int,KeyPoint>& getKpMap();
+	bool areDescriptorLoad();
+	
+	MatMap& getDescriptorMap();
+	MatMap& getOriginalImgs();
+	MatMap& getImgMap();
+	KpMap& getKpMap();
+	
+	const MatMap& getconstOriginalImgs();
+	const MatMap& getconstImgMap();
+	const KpMap& getconstKpMap();
+	const MatMap& getconstDescriptorMap();
 
-	void computeKeypoint(Ptr<FeatureDetector> feature_detector);
+	//void clean();
+	//void reload();
 };
 
 #endif //BDDIMAGE_HPP

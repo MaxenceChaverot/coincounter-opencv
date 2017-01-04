@@ -1,10 +1,10 @@
 #include "bddimage.hpp"
 
-BddImage::BddImage(std::string pathToImgFolder):kpLoad(false),imgLoad(false)
+BddImage::BddImage(std::string pathToImgFolder):kpLoad(false),imgLoad(false),descriptorLoad(false)
 {
 
 	loadImgFromFolder(pathToImgFolder);	
-	//std::cout<<imgMap.size()<<std::endl;
+	std::cout<<imgMap.size()<<std::endl;
 
 }
 
@@ -51,10 +51,10 @@ void BddImage::loadImgFromFolder(std::string pathToImgFolder){
 			is >> key;
 
 			Mat img = imread(fn[i]);
-			imgMap.insert(std::pair<int,Mat>(key,img));
+			imgMap[key].push_back(img);
 			Mat img_gray;
 			cvtColor(img, img_gray, CV_BGR2GRAY);
-			greyImgMap.insert(std::pair<int,Mat>(key,img_gray));
+			greyImgMap[key].push_back(img_gray);
 
 			//std::cout<<"Label : "<< label <<std::endl;
 			//std::cout<<"Label : "<< key  <<std::endl;
@@ -62,12 +62,21 @@ void BddImage::loadImgFromFolder(std::string pathToImgFolder){
 		}
 
 	}
+
+	imgLoad = true;
 }
 
-void BddImage::computeKeypoint(Ptr<FeatureDetector> feature_detector){ return;}
 
 bool BddImage::areKpLoad(){ return kpLoad;}
 bool BddImage::areImgLoad(){ return imgLoad;}
-const std::map<int,Mat>& BddImage::getOriginalImgs(){ return imgMap;}
-const std::map<int, Mat>& BddImage::getImgMap(){ return greyImgMap;}
-const std::map<int,KeyPoint>& BddImage::getKpMap(){ return kpMap;}
+bool BddImage::areDescriptorLoad(){ return descriptorLoad;}
+
+MatMap& BddImage::getOriginalImgs(){ return imgMap;}
+MatMap& BddImage::getImgMap(){ return greyImgMap;}
+KpMap& BddImage::getKpMap(){ return kpMap;}
+MatMap& BddImage::getDescriptorMap(){ return descriptorMap;}
+
+const MatMap& BddImage::getconstOriginalImgs(){ return imgMap;}
+const MatMap& BddImage::getconstImgMap(){ return greyImgMap;}
+const KpMap& BddImage::getconstKpMap(){ return kpMap;}
+const MatMap& BddImage::getconstDescriptorMap(){ return descriptorMap;}
