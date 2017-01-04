@@ -6,11 +6,8 @@
 #include <stdio.h>
 
 #include "comparator.hpp"
-<<<<<<< HEAD
 #include "bddimage.hpp"
-=======
 #include "circlesdetection.hpp"
->>>>>>> master
 
 using namespace cv;
 
