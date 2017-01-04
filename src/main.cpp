@@ -29,13 +29,11 @@ int main(int argc, char* argv[])
 {
 	help();
 	
-	std::cout<<"Test Bdd"<<std::endl;
+    /*std::cout<<"Test Bdd"<<std::endl;
 
 	BddImage imgbdd;
 
-	std::cout<<"Done"<<std::endl;
-
-
+    std::cout<<"Done"<<std::endl;*/
 
 	std::cout<<"Program start."<<std::endl; 
     
@@ -99,6 +97,7 @@ int main(int argc, char* argv[])
 
      /* Comparison with the database */
 
+    /*
 	Comparator orb_comparator(extractedCircles[0]);
 	orb_comparator.findKeyPointAndDescriptor();
 	orb_comparator.match();
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
 
 	namedWindow("Matches", WINDOW_NORMAL);
 	resizeWindow("Matches", output.cols, output.rows);
-	imshow("Matches", output);
+    imshow("Matches", output);*/
 
 	waitKey(0);
 

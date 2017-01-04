@@ -11,28 +11,40 @@
 
 using namespace cv;
 
-class Comparator{
+class Comparator
+{
 
-	Mat bdd, bdd_gray, img_source, img_gray, homography;
+private:
 
-	BddImage imgBdd;
+        /* ATTRIBUTES */
 
+        // The homography
+	//Mat homography;
+
+        // Orb descriptor
 	Ptr<FeatureDetector> feature_detector;
 	Ptr<DescriptorExtractor> descriptor_extractor;
 	Ptr<DescriptorMatcher> matcher;
 
-	//std::vector< std::vector<KeyPoint> > keypoints_bdd;
-	std::vector<KeyPoint> keypoints_bdd, keypoints_to_match;
-	Mat descriptors_bdd, descriptors_to_match;
-	std::vector<DMatch> matches, good_matches;
-	std::vector<Point2f> obj, scene;
+        // Matches
+	//std::vector<DMatch> matches, good_matches;
+	//std::vector<Point2f> obj, scene;
 
-	public:
-	Comparator(Mat img_in, std::string algorithmName = "ORB");
-	void setBddImg(std::string img_path);
-	void findKeyPointAndDescriptor();
-	void match();
-	Mat outputMatches();
+public:
+
+        // Ctor (algorithmName = ORB or MSER)
+	Comparator(std::string algorithmName = "ORB");
+
+        /* METHODS */
+
+        // Find the interest points
+        std::vector<KeyPoint> findKeyPoints(Mat img); 
+        // Find the descriptors
+        Mat findDescriptors(Mat img, std::vector<KeyPoint> keypoints);
+
+	//void match();
+
+	//Mat outputMatches();
 };
 
 #endif //COMPARATOR_HPP
