@@ -1,3 +1,6 @@
+#ifndef CIRCLEDETECTION_HPP
+#define CIRCLEDETECTION_HPP
+
 #include <iostream>
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -56,3 +59,4 @@ public:
         // Get the source image with the detected circles drawn on it
         Mat GetOutputImage();
 };
+#endif //CIRCLEDETECTION_HPP

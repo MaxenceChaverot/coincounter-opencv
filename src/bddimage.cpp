@@ -105,3 +105,25 @@ void BddImage::reload(){
 	clean();
 	loadImg();
 }
+
+void BddImage::fillKpMap(Comparator comparator){
+
+	for(MatMap::iterator it = greyImgMap.begin(); it != greyImgMap.end(); ++it){
+
+		for(int i = 0; i < it->second.size(); ++i){
+			//kpMap[it->first].push_back(comparator.findKeyPoints(it->second[i]));
+		}
+	}
+
+	kpLoad = true;
+}
+
+void BddImage::fillDescriptorMap(Comparator comparator){
+	for(MatMap::iterator it = greyImgMap.begin(); it != greyImgMap.end(); ++it){
+
+		for(int i = 0; i < it->second.size(); ++i){
+			//descriptorMap[it->first].push_back(comparator.findDescriptor(it->second[i],)	
+		}
+	}
+
+}

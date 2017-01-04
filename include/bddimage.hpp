@@ -9,6 +9,8 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/features2d/features2d.hpp"
 
+#include "comparator.hpp"
+
 using namespace cv;
 
 typedef std::map<int,std::vector<Mat> > MatMap;
@@ -53,6 +55,8 @@ class BddImage{
 	void clean();
 	void reload();
 	void setBddFolder(std::string pathToImgFolder);
+	void fillKpMap(Comparator comparator);
+	void fillDescriptorMap(Comparator comparator);
 };
 
 #endif //BDDIMAGE_HPP
