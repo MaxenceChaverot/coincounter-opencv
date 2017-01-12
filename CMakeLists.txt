@@ -5,12 +5,12 @@ project(coincounter-opencv)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
-#file(GLOB_RECURSE Foo_HEADERS "src/*.h")
+file(GLOB_RECURSE HEADERS "include/*.hpp")
 
 find_package( OpenCV REQUIRED )
 
 include_directories(${PROJECT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
 
-add_executable( coincounter-opencv ${SOURCES})
+add_executable( coincounter-opencv ${SOURCES} ${HEADERS})
 target_link_libraries( coincounter-opencv ${OpenCV_LIBS} )
 
