@@ -91,8 +91,6 @@ int main(int argc, char* argv[])
 
 	bdd.fillKpAndDescriptor(comparator);
 	
-	std::cout<<"Bdd is filled with "<<bdd.getMap().size()<<" images."<<std::endl;
-
 	/****************************************************************/
 	/* Compute keypoints and descriptors of ConteneurImage inside the vector */
 	/****************************************************************/
@@ -116,7 +114,7 @@ int main(int argc, char* argv[])
 	 *  -Find the Best score */
 	/****************************************************************/
 
-	ConteneurImage circle = circleToCompare[3];	
+	ConteneurImage circle = circleToCompare[0];	
 
 	std::map<int,std::vector<ConteneurImage> >::iterator it,itBest;
 
@@ -124,6 +122,9 @@ int main(int argc, char* argv[])
 	int bestIndex = -1;
 	std::vector<DMatch> bestMatches;
 
+	//Donner les X meilleurs dans l'ordre avec les scores
+	//Donner premier, si KO, donnez le suivant
+	//Trier base de donnée avec les scores
 	for(it = bdd.getMap().begin(); it != bdd.getMap().end(); ++it){
 		for(int i = 0; i < it->second.size(); ++i){
 			int score = 0;	
