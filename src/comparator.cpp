@@ -109,21 +109,18 @@ Mat Comparator::GetHomography(std::vector<KeyPoint> kp1,std::vector<KeyPoint> kp
 
 	Mat H = findHomography( obj, scene, CV_RANSAC,3, mask); 
 
-	outputScore = calculateScore(mask);
+	outputScore = retrieveNbInliers(mask);
 
 	return H;
 }
 
-int Comparator::calculateScore(Mat mask){
+int Comparator::retrieveNbInliers(Mat mask){
 
+	//Mauvais Score : preférer le nombre d'inlier
 	int sum = 0;
 	for(int i = 0; i < mask.rows; ++i){
 		sum += mask.at<uchar>(i,0);
 	}
 
-	float score = (float)sum / (float)mask.rows;
-
-	int score100 = score*100;
-
-	return score100;
+	return sum;
 }

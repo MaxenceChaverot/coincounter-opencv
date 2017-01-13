@@ -44,7 +44,7 @@ public:
         Mat GetHomography(std::vector<KeyPoint> kp1,std::vector<KeyPoint> kp2,std::vector<DMatch> matches, int& outputScore);
 
 		//Calculate the score 
-		int calculateScore(Mat mask);
+		int retrieveNbInliers(Mat mask);
 };
 
 #endif //COMPARATOR_HPP
