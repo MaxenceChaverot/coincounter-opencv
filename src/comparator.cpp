@@ -156,20 +156,18 @@ double Comparator::meanInliersDistance(Mat source_img,std::vector<KeyPoint> keyp
 
 
 	//Calcul des distances minimales et maximales entre les Inliers
-	double min_dist = 500;
-	double max_dist = 0;
+   /* double min_dist = 500;*/
+	/*double max_dist = 0;*/
 
-	std::vector<Point2f> goodInliers;
-
-	for(int i = 0; i < inliers.size(); i++){
-		for(int j = 0; j < inliers.size(); j++){
-			double dist = computeDistance(inliers.at(i),inliers.at(j),size_x,size_y);	
-			if( dist < min_dist && dist > 0.0f) 
-				min_dist = dist;
-			if( dist > max_dist ) 
-				max_dist = dist;
-		}
-	}
+   /* for(int i = 0; i < inliers.size(); i++){*/
+		//for(int j = 0; j < inliers.size(); j++){
+			//double dist = computeDistance(inliers.at(i),inliers.at(j),size_x,size_y);	
+			//if( dist < min_dist && dist > 0.0f) 
+				//min_dist = dist;
+			//if( dist > max_dist ) 
+				//max_dist = dist;
+		//}
+	//}
 
 
 	//On fait la moyenne des distances entre chaque Inliers
@@ -181,7 +179,7 @@ double Comparator::meanInliersDistance(Mat source_img,std::vector<KeyPoint> keyp
 			double distance;
 			distance = computeDistance(inliers.at(i),inliers.at(j),size_x,size_y);
 			//On ne considère pas les Inliers trop proche entre eux
-			if(distance > 100*min_dist){
+			if(distance > 0.1f){
 				sum += distance;
 				total++;
 			}
