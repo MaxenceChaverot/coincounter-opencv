@@ -25,7 +25,7 @@ public:
         Comparator_TM();
 
         // Perform the template matching operation
-        Mat template_match(Mat image, Mat templ);
+        double template_match(Mat source_img, Mat templ, Mat homography);
 };
 
 #endif //COMPARATOR_TM_HPP

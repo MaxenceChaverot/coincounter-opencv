@@ -14,7 +14,7 @@ using namespace cv;
 static void help();
 void parseParameters(CommandLineParser& parser, std::string& im_path,std::string& bdd_path,std::string& ip_num,int& method_num);
 
-typedef enum SCORE_METHOD{ NB_INLIERS, ZERO_MEAN_CC, KEYPOINTS_MEAN_DISTANCE} SCORE_METHOD;
+typedef enum SCORE_METHOD{ NB_INLIERS, ZERO_MEAN_CC, KEYPOINTS_MEAN_DISTANCE, TEMPLATE_MATCHING} SCORE_METHOD;
 
 int main(int argc, char* argv[])
 {
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	std::string im_path = "img/piecestest1.jpg",bdd_path="img/bdd/";
 	std::string ip_num="ORB"; //ORB Detector used by default
 	int method_num=1; // Circles detection without pretreatment is used by default
-	SCORE_METHOD score_method = KEYPOINTS_MEAN_DISTANCE;
+    SCORE_METHOD score_method = TEMPLATE_MATCHING;
 
     // Set parameters to Input value
 	const char* keys = "{path ||}{path_bbd ||}{method_num ||}{ip_num ||}";
@@ -104,52 +104,12 @@ int main(int argc, char* argv[])
 		circleToCompare[i].descriptors = comparator.findDescriptors(circleToCompare[i].img, circleToCompare[i].keypoints);
 	}
 	
-    /****************************************************************/
-    /*(For only one circle extrated : TESTING)*/
-    /****************************************************************/
-
-    // TEMPLATE MATCHING :
-    Comparator_TM comp_tm = Comparator_TM();
-    std::map<int,std::vector<ConteneurImage> > myMap = bdd.getMap();
-
-    std::map<int,std::vector<ConteneurImage> >::iterator itCaro = myMap.begin();
-    advance(itCaro, 2);
-    int taille = itCaro->second.size() - 1;
-
-    Mat cIm;
-    if(taille >= 0) cIm = itCaro->second[taille - 1].img;
-
-    ConteneurImage cImToCompare = circleToCompare[0];
-    Mat resultat = comp_tm.template_match(cImToCompare.img, cIm);
-
-    // Draw the template matching result
-    namedWindow("Template matching", WINDOW_NORMAL);
-    resizeWindow("Template matching", resultat.cols, resultat.rows);
-    imshow("Template matching", resultat);
-
-    // Draw the template matching result
-    namedWindow("Pièce de référence", WINDOW_NORMAL);
-    resizeWindow("Pièce de référence", cIm.cols, cIm.rows);
-    imshow("Pièce de référence", cIm);
-
-    // Get and apply homography
-    int scoreCaro = 0;
-    std::vector<DMatch> matchesCaro = comparator.match(cImToCompare.descriptors, itCaro->second[taille - 1].descriptors);
-    Mat Homography = comparator.GetHomography(cImToCompare.keypoints,itCaro->second[taille - 1].keypoints, matchesCaro, scoreCaro);
-
-    std::cout<<"HOMO = "<<Homography<<std::endl;
-
-    Mat cImToCompareturned;
-    warpAffine(cImToCompare.img, cImToCompareturned, Homography, cImToCompare.img.size());
-
-    // Draw the rotation result
-    namedWindow("Pièce à comparer tournée", WINDOW_NORMAL);
-    resizeWindow("Pièce à comparer tournée", cImToCompareturned.cols, cImToCompareturned.rows);
-    imshow("Pièce à comparer tournée", cImToCompareturned);
-		
 	/****************************************************************/
 	/*(For only one circle extrated : TESTING)*/
 	/****************************************************************/
+
+    // Create comparator template matching
+    Comparator_TM comp_tm = Comparator_TM();
 
 	/****************************************************************/
 	/*Compare Extracted Circle to Database*/
@@ -160,7 +120,7 @@ int main(int argc, char* argv[])
 	 *  -Find the Best score */
 	/****************************************************************/
 
-    ConteneurImage circle = circleToCompare[0];
+    ConteneurImage circle = circleToCompare[2];
 
 	std::map<int,std::vector<ConteneurImage> >::iterator it,itBest;
 
@@ -173,17 +133,20 @@ int main(int argc, char* argv[])
 	//Donner premier, si KO, donnez le suivant
 	//Trier base de donnée avec les scores
 
-	for(it = bdd.getMap().begin(); it != bdd.getMap().end(); ++it){
-		for(int i = 0; i < it->second.size(); ++i){
+    for(it = bdd.getMap().begin(); it != bdd.getMap().end(); ++it)
+    {
+        for(int i = 0; i < it->second.size(); ++i)
+        {
 
 			std::vector<DMatch> matches = comparator.match(circle.descriptors,it->second[i].descriptors);
 
 			Mat homography,mask;
 			homography = comparator.GetHomography(circle.keypoints,it->second[i].keypoints, matches, mask);	
 
-			double score;
+            double score;
 
-			switch(score_method){
+            switch(score_method)
+            {
 
 				case NB_INLIERS:
 					score = comparator.retrieveNbInliers(mask); 
@@ -194,6 +157,9 @@ int main(int argc, char* argv[])
 				case KEYPOINTS_MEAN_DISTANCE:
 					score = comparator.meanInliersDistance(circle.img, circle.keypoints, mask);
 					break;
+                case TEMPLATE_MATCHING:
+                    score = comp_tm.template_match(circle.img, it->second[i].img, homography);
+                    break;
 				default:
 					exit(0);
 			}
@@ -211,7 +177,7 @@ int main(int argc, char* argv[])
 
 	std::cout<<"The coin Value is "<<itBest->first<<std::endl;
 
-	//Draw the best Match
+    // Draw the best Match
 	Mat output = comparator.drawOutputMatches(circle.img,itBest->second[bestIndex].img,circle.keypoints,itBest->second[bestIndex].keypoints,bestMatches);
 
 	namedWindow("Matches", WINDOW_NORMAL);
