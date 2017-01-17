@@ -60,8 +60,12 @@ int main(int argc, char* argv[])
 	/* Show original Image with circles detected drawn */
 	Mat img_with_circles_drawn = circles_Detection.GetOutputImage();
 	namedWindow("Original image with coins", WINDOW_NORMAL);
-	resizeWindow("Original image with coins", img_with_circles_drawn.cols, img_with_circles_drawn.rows);
+	//resizeWindow("Original image with coins", img_with_circles_drawn.cols, img_with_circles_drawn.rows);
+	resizeWindow("Original image with coins", 500,500);
 	imshow("Original image with coins", img_with_circles_drawn);
+
+	std::cout<<"Press Enter to continue !"<<std::endl<<std::endl;
+	waitKey(0);
 
 	/* Show results for DEBUG
 	   for(size_t i = 0; i < extractedCircles.size(); i++)
@@ -117,65 +121,73 @@ int main(int argc, char* argv[])
 	 *  -Find the Best score */
 	/****************************************************************/
 
-	ConteneurImage circle = circleToCompare[3];	
+	for(int i = 0; i < circleToCompare.size();++i){
 
-	std::map<int,std::vector<ConteneurImage> >::iterator it,itBest;
+		std::cout<<"Computing..."<<std::endl;
 
-	//int bestScore = 0;
-	double bestScore = 0;
-	int bestIndex = -1;
-	std::vector<DMatch> bestMatches;
+		ConteneurImage circle = circleToCompare[i];	
 
-	//Donner les X meilleurs dans l'ordre avec les scores
-	//Donner premier, si KO, donnez le suivant
-	//Trier base de donnée avec les scores
-	for(it = bdd.getMap().begin(); it != bdd.getMap().end(); ++it){
-		for(int i = 0; i < it->second.size(); ++i){
+		std::map<int,std::vector<ConteneurImage> >::iterator it,itBest;
 
-			std::vector<DMatch> matches = comparator.match(circle.descriptors,it->second[i].descriptors);
+		//int bestScore = 0;
+		double bestScore = 0;
+		int bestIndex = -1;
+		std::vector<DMatch> bestMatches;
 
-			Mat homography,mask;
-			homography = comparator.GetHomography(circle.keypoints,it->second[i].keypoints, matches, mask);	
+		//Donner les X meilleurs dans l'ordre avec les scores
+		//Donner premier, si KO, donnez le suivant
+		//Trier base de donnée avec les scores
+		for(it = bdd.getMap().begin(); it != bdd.getMap().end(); ++it){
+			for(int i = 0; i < it->second.size(); ++i){
 
-			double score;
+				std::vector<DMatch> matches = comparator.match(circle.descriptors,it->second[i].descriptors);
 
-			switch(score_method){
+				Mat homography,mask;
+				homography = comparator.GetHomography(circle.keypoints,it->second[i].keypoints, matches, mask);	
 
-				case NB_INLIERS:
-					score = comparator.retrieveNbInliers(mask); 
-					break;
-				case ZERO_MEAN_CC:
-					score = comparator.normalizeCC(circle.img,it->second[i].img,homography);
-					break;
-				case KEYPOINTS_MEAN_DISTANCE:
-					score = comparator.meanInliersDistance(circle.img, circle.keypoints, mask);
-					break;
-				default:
-					exit(0);
-			}
+				double score;
 
-			std::cout<<"For label = "<<it->first<<", Score = "<<score<<std::endl;
+				switch(score_method){
 
-			if(score > bestScore){
-				bestScore = score;
-				itBest = it;
-				bestIndex = i;
-				bestMatches = matches;
+					case NB_INLIERS:
+						score = comparator.retrieveNbInliers(mask); 
+						break;
+					case ZERO_MEAN_CC:
+						score = comparator.normalizeCC(circle.img,it->second[i].img,homography);
+						break;
+					case KEYPOINTS_MEAN_DISTANCE:
+						score = comparator.meanInliersDistance(circle.img, circle.keypoints, mask);
+						break;
+					default:
+						exit(0);
+				}
+				//DEBUG
+				//std::cout<<"For label = "<<it->first<<", Score = "<<score<<std::endl;
+
+				if(score > bestScore){
+					bestScore = score;
+					itBest = it;
+					bestIndex = i;
+					bestMatches = matches;
+				}
 			}
 		}
+
+		std::cout<<"The coin Value is "<<itBest->first<<std::endl<<std::endl;
+
+		//Draw the best Match
+		Mat output = comparator.drawOutputMatches(circle.img,itBest->second[bestIndex].img,circle.keypoints,itBest->second[bestIndex].keypoints,bestMatches);
+
+		namedWindow("Coin", WINDOW_NORMAL);
+		resizeWindow("Coin", circle.img.cols, circle.img.rows);
+		imshow("Coin",circle.img);
+
+		namedWindow("Matches", WINDOW_NORMAL);
+		resizeWindow("Matches", output.cols, output.rows);
+		imshow("Matches", output);
+		std::cout<<"Press Enter to continue !"<<std::endl<<std::endl;
+		waitKey(0);
 	}
-
-	std::cout<<"The coin Value is "<<itBest->first<<std::endl;
-
-	//Draw the best Match
-	Mat output = comparator.drawOutputMatches(circle.img,itBest->second[bestIndex].img,circle.keypoints,itBest->second[bestIndex].keypoints,bestMatches);
-
-	namedWindow("Matches", WINDOW_NORMAL);
-	resizeWindow("Matches", output.cols, output.rows);
-	imshow("Matches", output);
-
-	waitKey(0);
-
 	return 0;
 }
 
@@ -245,5 +257,5 @@ void parseParameters(CommandLineParser& parser, std::string& im_path,std::string
 		std::cout<<"Circles detection without image pretreatment is used by default"<<std::endl;
 	}
 
-
+	std::cout<<std::endl;
 }
