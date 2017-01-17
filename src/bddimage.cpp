@@ -29,7 +29,7 @@ void BddImage::loadImg(){
 	//cv::glob method to find all the image
 	glob(pathToBddFolder, fn, true);
 	
-	std::cout<<"Bdd will be filed with "<<fn.size()<<" pictures"<<std::endl;
+	std::cout<<"Bdd will be filed with "<<fn.size()<<" pictures"<<std::endl<<std::endl;
 
 	for(int i = 0; i < fn.size(); ++i){
 		ConteneurImage contImg(fn[i]);
