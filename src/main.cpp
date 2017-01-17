@@ -13,6 +13,8 @@ using namespace cv;
 static void help();
 void parseParameters(CommandLineParser& parser, std::string& im_path,std::string& bdd_path,std::string& ip_num,int& method_num);
 
+typedef enum SCORE_METHOD{ NB_INLIERS, ZERO_MEAN_CC, KEYPOINTS_MEAN_DISTANCE} SCORE_METHOD;
+
 int main(int argc, char* argv[])
 {
 	// Help message
@@ -22,6 +24,7 @@ int main(int argc, char* argv[])
 	std::string im_path = "img/piecestest1.jpg",bdd_path="img/bdd/";
 	std::string ip_num="ORB"; //ORB Detector used by default
 	int method_num=1; // Circles detection without pretreatment is used by default
+	SCORE_METHOD score_method = KEYPOINTS_MEAN_DISTANCE;
 
 	//Set parameters to Input value
 	const char* keys = "{path ||}{path_bbd ||}{method_num ||}{ip_num ||}";
@@ -61,15 +64,15 @@ int main(int argc, char* argv[])
 	imshow("Original image with coins", img_with_circles_drawn);
 
 	/* Show results for DEBUG
-	for(size_t i = 0; i < extractedCircles.size(); i++)
-	{
-	std::ostringstream s;
-	s << "Extracted Circle "<< i+1;
-	std::string nameWin(s.str());
-	namedWindow(nameWin, WINDOW_NORMAL);
-	resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
-	imshow(nameWin, extractedCircles[i]);
-	}*/
+	   for(size_t i = 0; i < extractedCircles.size(); i++)
+	   {
+	   std::ostringstream s;
+	   s << "Extracted Circle "<< i+1;
+	   std::string nameWin(s.str());
+	   namedWindow(nameWin, WINDOW_NORMAL);
+	   resizeWindow(nameWin, extractedCircles[i].cols, extractedCircles[i].rows);
+	   imshow(nameWin, extractedCircles[i]);
+	   }*/
 
 	/****************************************************************/
 	/* Create Comparator */
@@ -84,23 +87,23 @@ int main(int argc, char* argv[])
 	BddImage bdd(bdd_path);
 
 	if(bdd.getMap().empty()){
-	   	std::cout<<"Bdd loading error"<<std::endl;	
+		std::cout<<"Bdd loading error"<<std::endl;	
 		exit(0);
 	}
 
 
 	bdd.fillKpAndDescriptor(comparator);
-	
+
 	/****************************************************************/
 	/* Compute keypoints and descriptors of ConteneurImage inside the vector */
 	/****************************************************************/
-	
+
 	for(int i = 0; i < circleToCompare.size(); ++i){
 		circleToCompare[i].keypoints = comparator.findKeyPoints(circleToCompare[i].img);
 		circleToCompare[i].descriptors = comparator.findDescriptors(circleToCompare[i].img, circleToCompare[i].keypoints);
 	}
-	
-		
+
+
 	/****************************************************************/
 	/*(For only one circle extrated : TESTING)*/
 	/****************************************************************/
@@ -114,11 +117,12 @@ int main(int argc, char* argv[])
 	 *  -Find the Best score */
 	/****************************************************************/
 
-	ConteneurImage circle = circleToCompare[0];	
+	ConteneurImage circle = circleToCompare[3];	
 
 	std::map<int,std::vector<ConteneurImage> >::iterator it,itBest;
 
-	int bestScore = 0;
+	//int bestScore = 0;
+	double bestScore = 0;
 	int bestIndex = -1;
 	std::vector<DMatch> bestMatches;
 
@@ -127,10 +131,28 @@ int main(int argc, char* argv[])
 	//Trier base de donnée avec les scores
 	for(it = bdd.getMap().begin(); it != bdd.getMap().end(); ++it){
 		for(int i = 0; i < it->second.size(); ++i){
-			int score = 0;	
+
 			std::vector<DMatch> matches = comparator.match(circle.descriptors,it->second[i].descriptors);
-		
-			Mat H = comparator.GetHomography(circle.keypoints,it->second[i].keypoints, matches, score);	
+
+			Mat homography,mask;
+			homography = comparator.GetHomography(circle.keypoints,it->second[i].keypoints, matches, mask);	
+
+			double score;
+
+			switch(score_method){
+
+				case NB_INLIERS:
+					score = comparator.retrieveNbInliers(mask); 
+					break;
+				case ZERO_MEAN_CC:
+					score = comparator.normalizeCC(circle.img,it->second[i].img,homography);
+					break;
+				case KEYPOINTS_MEAN_DISTANCE:
+					score = comparator.meanInliersDistance(circle.img, circle.keypoints, mask);
+					break;
+				default:
+					exit(0);
+			}
 
 			std::cout<<"For label = "<<it->first<<", Score = "<<score<<std::endl;
 
